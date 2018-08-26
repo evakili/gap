@@ -26,10 +26,6 @@ struct stream_socket {
     int fd;
 };
 
-auto get_a_stream_socket() {
-    return stream_socket{};
-}
-
 auto bind_stream_socket_to_any(stream_socket sock, int portno) {
     struct sockaddr_in serv_addr;
     bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -69,7 +65,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    auto sock = get_a_stream_socket();
+    auto sock = stream_socket{};
 
     bind_stream_socket_to_any(sock, atoi(argv[1]));
 
