@@ -5,6 +5,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <array>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -23,9 +24,9 @@ struct client_socket {
             error("ERROR on accept.");
     }
 
-    auto read(char* buffer, int len) {
-        bzero(buffer, len);
-        auto n = ::read(fd_, buffer, len - 1);
+    template<size_t N>
+    auto read(std::array<char, N> buffer) {
+        auto n = ::read(fd_, buffer.data(), buffer.size() - 1);
         if (n < 0)
             error("ERROR reading from socket.");
         return n;
@@ -87,9 +88,9 @@ int main(int argc, char *argv[]) {
 
     auto newsock = sock.accept_a_client();
     
-    char buffer[256];
-    newsock.read(buffer, 256);
-    std::cout << "Here is the message: " << buffer << std::endl;
+    auto buffer = std::array<char, 256>{};
+    newsock.read(buffer);
+    std::cout << "Here is the message: " << buffer.data() << std::endl;
 
     newsock.write("I got your message", 18);
 
