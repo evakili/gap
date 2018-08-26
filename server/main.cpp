@@ -17,7 +17,7 @@ void error(const char* message) {
 }
 
 struct client_socket {
-    client_socket(int newfd) : fd_ { newfd } {
+    explicit client_socket(int newfd) : fd_ { newfd } {
         if (fd_ < 0)
             error("ERROR on accept.");
     }
@@ -65,7 +65,7 @@ struct server_socket {
     client_socket accept_a_client() {
         struct sockaddr_in cli_addr;
         auto clilen = sizeof(cli_addr);
-        return accept(fd_, (struct sockaddr *) &cli_addr, (socklen_t *) &clilen);
+        return client_socket{ accept(fd_, (struct sockaddr *) &cli_addr, (socklen_t *) &clilen) };
     }
 
 private:
