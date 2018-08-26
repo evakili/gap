@@ -6,6 +6,7 @@
 #include <cstring>
 #include <iostream>
 #include <array>
+#include <string>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -32,8 +33,9 @@ struct client_socket {
         return n;
     }
 
-    auto write(const char* buffer, int len) {
-        auto n = ::write(fd_, buffer, len);
+    template<typename Container>
+    auto write(const Container& buffer) {
+        auto n = ::write(fd_, buffer.data(), buffer.size());
         if (n < 0)
             error("ERROR writing to socket.");
         return n;
@@ -92,7 +94,7 @@ int main(int argc, char *argv[]) {
     newsock.read(buffer);
     std::cout << "Here is the message: " << buffer.data() << std::endl;
 
-    newsock.write("I got your message", 18);
+    newsock.write(std::string{ "I got your message" });
 
     return 0;
 }
