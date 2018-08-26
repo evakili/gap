@@ -3,16 +3,17 @@
 *   http://www.cs.rpi.edu/~moorthy/Courses/os98/Pgms/socket.html
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <strings.h>
+#include <cstring>
+#include <iostream>
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+
 void error(const char* message) {
-    perror(message);
+    std::cerr << message << ": " << strerror(errno) << "." << std::endl;
     exit(1);
 }
 
@@ -74,8 +75,8 @@ private:
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        fprintf(stderr, "ERROR, no port provided.\n");
-        exit(1);
+        std::cerr << "ERROR, no port provided." << std::endl;
+        return 1;
     }
 
     auto sock = server_socket{};
@@ -88,7 +89,7 @@ int main(int argc, char *argv[]) {
     
     char buffer[256];
     newsock.read(buffer, 256);
-    printf("Here is the message: %s\n", buffer);
+    std::cout << "Here is the message: " << buffer << std::endl;
 
     newsock.write("I got your message", 18);
 
