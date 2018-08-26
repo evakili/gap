@@ -62,10 +62,10 @@ struct server_socket {
         ::listen(fd_, 5) ;
     }
 
-    auto accept_a_client() {
+    client_socket accept_a_client() {
         struct sockaddr_in cli_addr;
         auto clilen = sizeof(cli_addr);
-        return client_socket{ accept(fd_, (struct sockaddr *) &cli_addr, (socklen_t *) &clilen) };
+        return accept(fd_, (struct sockaddr *) &cli_addr, (socklen_t *) &clilen);
     }
 
 private:
