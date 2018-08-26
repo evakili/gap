@@ -79,9 +79,9 @@ private:
 void gap_with_client(client_socket clnt) {
         auto buffer = std::array<char, 256>{};
         clnt.read(buffer);
-        std::cout << "Here is the message: " << buffer.data() << std::endl;
+        std::cout << "Client says: " << buffer.data() << std::endl;
 
-        clnt.write(std::string{ "I got your message" });
+        clnt.write(std::string{ "Your message has been received!" });
 }
 
 int main(int argc, char *argv[]) {
