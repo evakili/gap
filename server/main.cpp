@@ -76,6 +76,14 @@ private:
     }
 };
 
+void gap_with_client(client_socket clnt) {
+        auto buffer = std::array<char, 256>{};
+        clnt.read(buffer);
+        std::cout << "Here is the message: " << buffer.data() << std::endl;
+
+        clnt.write(std::string{ "I got your message" });
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         std::cerr << "ERROR, no port provided." << std::endl;
@@ -84,16 +92,9 @@ int main(int argc, char *argv[]) {
 
     try {
         auto srv = server{ atoi(argv[1]) };
-
         srv.start();
 
-        auto clnt = srv.next_client();
-        
-        auto buffer = std::array<char, 256>{};
-        clnt.read(buffer);
-        std::cout << "Here is the message: " << buffer.data() << std::endl;
-
-        clnt.write(std::string{ "I got your message" });
+        gap_with_client(srv.next_client());
     }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
