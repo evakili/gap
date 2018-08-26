@@ -24,6 +24,17 @@ auto get_a_stream_socket() {
     return -1;
 }
 
+auto bind_stream_socket_to_any(int sockfd, int portno) {
+    struct sockaddr_in serv_addr;
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_port = htons(portno);
+    if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
+        error("ERROR on binding.");
+
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         fprintf(stderr, "ERROR, no port provided.\n");
@@ -32,14 +43,7 @@ int main(int argc, char *argv[]) {
 
     auto sockfd = get_a_stream_socket();
 
-    struct sockaddr_in serv_addr;
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    auto portno = atoi(argv[1]);
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(portno);
-    if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-        error("ERROR on binding.");
+    bind_stream_socket_to_any(sockfd, atoi(argv[1]));
 
     listen(sockfd, 5) ;
 
