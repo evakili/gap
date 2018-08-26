@@ -43,6 +43,13 @@ auto accept_a_client(int sockfd) {
     return newsockfd;
 }
 
+auto read_from_socket(int sockfd, char* buffer, int len) {
+    bzero(buffer, len);
+    auto n = read(sockfd, buffer, len - 1);
+    if (n < 0)
+        error("ERROR reading from socket.");
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         fprintf(stderr, "ERROR, no port provided.\n");
@@ -58,13 +65,10 @@ int main(int argc, char *argv[]) {
     auto newsockfd = accept_a_client(sockfd);
     
     char buffer[256];
-    bzero(buffer, 256);
-    auto n = read(newsockfd, buffer, 255);
-    if (n < 0)
-        error("ERROR reading from socket.");
-
+    read_from_socket(newsockfd, buffer, 256);
     printf("Here is the message: %s\n", buffer);
-    n = write(newsockfd, "I got your message", 18);
+
+    auto n = write(newsockfd, "I got your message", 18);
     if (n < 0)
         error("ERROR writing to socket.");
     return 0;
