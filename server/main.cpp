@@ -33,6 +33,10 @@ struct stream_socket {
             error("ERROR on binding.");
     }
 
+    void listen() {
+        ::listen(fd, 5) ;
+    }
+
     auto accept_a_client() {
         struct sockaddr_in cli_addr;
         auto clilen = sizeof(cli_addr);
@@ -69,7 +73,7 @@ int main(int argc, char *argv[]) {
 
     sock.bind_to_any(atoi(argv[1]));
 
-    listen(sock.fd, 5) ;
+    sock.listen();
 
     auto newsock = sock.accept_a_client();
     
