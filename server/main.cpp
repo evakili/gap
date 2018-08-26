@@ -22,6 +22,21 @@ struct client_socket {
             error("ERROR on accept.");
     }
 
+    auto read(char* buffer, int len) {
+        bzero(buffer, len);
+        auto n = ::read(fd, buffer, len - 1);
+        if (n < 0)
+            error("ERROR reading from socket.");
+        return n;
+    }
+
+    auto write(const char* buffer, int len) {
+        auto n = ::write(fd, buffer, len);
+        if (n < 0)
+            error("ERROR writing to socket.");
+        return n;
+    }
+
     int fd;
 };
 
@@ -55,19 +70,6 @@ struct server_socket {
     int fd;
 };
 
-auto read_from_socket(client_socket sock, char* buffer, int len) {
-    bzero(buffer, len);
-    auto n = read(sock.fd, buffer, len - 1);
-    if (n < 0)
-        error("ERROR reading from socket.");
-}
-
-auto write_to_socket(client_socket sock, const char* buffer, int len) {
-    auto n = write(sock.fd, buffer, len);
-    if (n < 0)
-        error("ERROR writing to socket.");
-}
-
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         fprintf(stderr, "ERROR, no port provided.\n");
@@ -83,10 +85,10 @@ int main(int argc, char *argv[]) {
     auto newsock = sock.accept_a_client();
     
     char buffer[256];
-    read_from_socket(newsock, buffer, 256);
+    newsock.read(buffer, 256);
     printf("Here is the message: %s\n", buffer);
 
-    write_to_socket(newsock, "I got your message", 18);
+    newsock.write("I got your message", 18);
 
     return 0;
 }
