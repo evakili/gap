@@ -25,8 +25,8 @@ struct client_socket {
             error("ERROR on accept.");
     }
 
-    template<size_t N>
-    auto read(std::array<char, N> buffer) {
+    template<typename Container>
+    auto read(Container& buffer) {
         auto n = ::read(fd_, buffer.data(), buffer.size() - 1);
         if (n < 0)
             error("ERROR reading from socket.");
