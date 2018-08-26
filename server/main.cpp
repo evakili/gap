@@ -7,29 +7,28 @@
 #include <iostream>
 #include <array>
 #include <string>
+#include <system_error>
 
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-
-void error(const char* message) {
-    std::cerr << message << ": " << strerror(errno) << "." << std::endl;
-    exit(1);
+void error() {
+    throw std::system_error{ errno, std::system_category().default_error_condition(errno).category() };
 }
 
 struct client_socket {
     explicit client_socket(int newfd) : fd_ { newfd } {
         if (fd_ < 0)
-            error("ERROR on accept.");
+            error();
     }
 
     template<typename Container>
     auto read(Container& buffer) {
         auto n = ::read(fd_, buffer.data(), buffer.size() - 1);
         if (n < 0)
-            error("ERROR reading from socket.");
+            error();
         return n;
     }
 
@@ -37,7 +36,7 @@ struct client_socket {
     auto write(const Container& buffer) {
         auto n = ::write(fd_, buffer.data(), buffer.size());
         if (n < 0)
-            error("ERROR writing to socket.");
+            error();
         return n;
     }
 
@@ -49,7 +48,7 @@ struct server_socket {
     server_socket() {
         fd_ = socket(AF_INET, SOCK_STREAM, 0);
         if (fd_ <= 0)
-            error("ERROR opening socket.");
+            error();
     }
 
     void bind_to_any(int portno) const {
@@ -59,7 +58,7 @@ struct server_socket {
         serv_addr.sin_addr.s_addr = INADDR_ANY;
         serv_addr.sin_port = htons(portno);
         if (bind(fd_, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-            error("ERROR on binding.");
+            error();
     }
 
     void listen() {
@@ -82,19 +81,23 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    auto sock = server_socket{};
+    try {
+        auto sock = server_socket{};
 
-    sock.bind_to_any(atoi(argv[1]));
+        sock.bind_to_any(atoi(argv[1]));
 
-    sock.listen();
+        sock.listen();
 
-    auto newsock = sock.accept_a_client();
-    
-    auto buffer = std::array<char, 256>{};
-    newsock.read(buffer);
-    std::cout << "Here is the message: " << buffer.data() << std::endl;
+        auto newsock = sock.accept_a_client();
+        
+        auto buffer = std::array<char, 256>{};
+        newsock.read(buffer);
+        std::cout << "Here is the message: " << buffer.data() << std::endl;
 
-    newsock.write(std::string{ "I got your message" });
-
+        newsock.write(std::string{ "I got your message" });
+    }
+    catch (std::exception& e) {
+        std::cerr << e.what() << std::endl;
+    }
     return 0;
 }
