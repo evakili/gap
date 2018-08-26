@@ -33,18 +33,18 @@ struct stream_socket {
             error("ERROR on binding.");
     }
 
+    auto accept_a_client() {
+        struct sockaddr_in cli_addr;
+        auto clilen = sizeof(cli_addr);
+        stream_socket newsock{};
+        newsock.fd = accept(fd, (struct sockaddr *) &cli_addr, (socklen_t *) &clilen);
+        if (newsock.fd < 0)
+            error("ERROR on accept.");
+        return newsock;
+    }
+
     int fd;
 };
-
-auto accept_a_client(stream_socket sock) {
-    struct sockaddr_in cli_addr;
-    auto clilen = sizeof(cli_addr);
-    stream_socket newsock{};
-    newsock.fd = accept(sock.fd, (struct sockaddr *) &cli_addr, (socklen_t *) &clilen);
-    if (newsock.fd < 0)
-        error("ERROR on accept.");
-    return newsock;
-}
 
 auto read_from_socket(stream_socket sock, char* buffer, int len) {
     bzero(buffer, len);
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
 
     listen(sock.fd, 5) ;
 
-    auto newsock = accept_a_client(sock);
+    auto newsock = sock.accept_a_client();
     
     char buffer[256];
     read_from_socket(newsock, buffer, 256);
