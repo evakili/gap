@@ -16,15 +16,21 @@ void error(const char* message) {
     exit(1);
 }
 
+auto get_a_stream_socket() {
+    auto sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock > 0)
+        return sock;
+    error("ERROR opening socket.");
+    return -1;
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         fprintf(stderr, "ERROR, no port provided.\n");
         exit(1);
     }
 
-    auto sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0)
-        error("ERROR opening socket.");
+    auto sockfd = get_a_stream_socket();
 
     struct sockaddr_in serv_addr;
     bzero((char *) &serv_addr, sizeof(serv_addr));
