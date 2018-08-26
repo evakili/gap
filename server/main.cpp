@@ -50,6 +50,12 @@ auto read_from_socket(int sockfd, char* buffer, int len) {
         error("ERROR reading from socket.");
 }
 
+auto write_to_socket(int sockfd, const char* buffer, int len) {
+    auto n = write(sockfd, buffer, len);
+    if (n < 0)
+        error("ERROR writing to socket.");
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         fprintf(stderr, "ERROR, no port provided.\n");
@@ -68,8 +74,7 @@ int main(int argc, char *argv[]) {
     read_from_socket(newsockfd, buffer, 256);
     printf("Here is the message: %s\n", buffer);
 
-    auto n = write(newsockfd, "I got your message", 18);
-    if (n < 0)
-        error("ERROR writing to socket.");
+    write_to_socket(newsockfd, "I got your message", 18);
+
     return 0;
 }
