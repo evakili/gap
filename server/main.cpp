@@ -17,15 +17,16 @@ void error(const char* message) {
 }
 
 struct stream_socket {
+    stream_socket() {
+        fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (fd <= 0)
+            error("ERROR opening socket.");
+    }
+
     int fd;
 };
 
 auto get_a_stream_socket() {
-    stream_socket sock{};
-    sock.fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock.fd > 0)
-        return sock;
-    error("ERROR opening socket.");
     return stream_socket{};
 }
 
