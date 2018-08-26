@@ -23,18 +23,18 @@ struct stream_socket {
             error("ERROR opening socket.");
     }
 
+    void bind_to_any(int portno) const {
+        struct sockaddr_in serv_addr;
+        bzero((char *) &serv_addr, sizeof(serv_addr));
+        serv_addr.sin_family = AF_INET;
+        serv_addr.sin_addr.s_addr = INADDR_ANY;
+        serv_addr.sin_port = htons(portno);
+        if (bind(fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
+            error("ERROR on binding.");
+    }
+
     int fd;
 };
-
-auto bind_stream_socket_to_any(stream_socket sock, int portno) {
-    struct sockaddr_in serv_addr;
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(portno);
-    if (bind(sock.fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-        error("ERROR on binding.");
-}
 
 auto accept_a_client(stream_socket sock) {
     struct sockaddr_in cli_addr;
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 
     auto sock = stream_socket{};
 
-    bind_stream_socket_to_any(sock, atoi(argv[1]));
+    sock.bind_to_any(atoi(argv[1]));
 
     listen(sock.fd, 5) ;
 
