@@ -44,12 +44,26 @@ private:
     int fd_;
 };
 
-struct server_socket {
-    server_socket() {
+struct server {
+    server(int portno) {
         fd_ = socket(AF_INET, SOCK_STREAM, 0);
         if (fd_ <= 0)
             error();
+        bind_to_any(portno);
     }
+
+    void start() {
+        ::listen(fd_, 5) ;
+    }
+
+    client_socket next_client() {
+        struct sockaddr_in cli_addr;
+        auto clilen = sizeof(cli_addr);
+        return client_socket{ accept(fd_, (struct sockaddr *) &cli_addr, (socklen_t *) &clilen) };
+    }
+
+private:
+    int fd_;
 
     void bind_to_any(int portno) const {
         struct sockaddr_in serv_addr;
@@ -60,19 +74,6 @@ struct server_socket {
         if (bind(fd_, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
             error();
     }
-
-    void listen() {
-        ::listen(fd_, 5) ;
-    }
-
-    client_socket accept_a_client() {
-        struct sockaddr_in cli_addr;
-        auto clilen = sizeof(cli_addr);
-        return client_socket{ accept(fd_, (struct sockaddr *) &cli_addr, (socklen_t *) &clilen) };
-    }
-
-private:
-    int fd_;
 };
 
 int main(int argc, char *argv[]) {
@@ -82,19 +83,17 @@ int main(int argc, char *argv[]) {
     }
 
     try {
-        auto sock = server_socket{};
+        auto srv = server{ atoi(argv[1]) };
 
-        sock.bind_to_any(atoi(argv[1]));
+        srv.start();
 
-        sock.listen();
-
-        auto newsock = sock.accept_a_client();
+        auto clnt = srv.next_client();
         
         auto buffer = std::array<char, 256>{};
-        newsock.read(buffer);
+        clnt.read(buffer);
         std::cout << "Here is the message: " << buffer.data() << std::endl;
 
-        newsock.write(std::string{ "I got your message" });
+        clnt.write(std::string{ "I got your message" });
     }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
