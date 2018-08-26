@@ -94,7 +94,8 @@ int main(int argc, char *argv[]) {
         auto srv = server{ atoi(argv[1]) };
         srv.start();
 
-        gap_with_client(srv.next_client());
+        while (true)
+            gap_with_client(srv.next_client());
     }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
