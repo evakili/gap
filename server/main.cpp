@@ -32,7 +32,15 @@ auto bind_stream_socket_to_any(int sockfd, int portno) {
     serv_addr.sin_port = htons(portno);
     if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
         error("ERROR on binding.");
+}
 
+auto accept_a_client(int sockfd) {
+    struct sockaddr_in cli_addr;
+    auto clilen = sizeof(cli_addr);
+    auto newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, (socklen_t *) &clilen);
+    if (newsockfd < 0)
+        error("ERROR on accept.");
+    return newsockfd;
 }
 
 int main(int argc, char *argv[]) {
@@ -47,11 +55,7 @@ int main(int argc, char *argv[]) {
 
     listen(sockfd, 5) ;
 
-    struct sockaddr_in cli_addr;
-    auto clilen = sizeof(cli_addr);
-    auto newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, (socklen_t *) &clilen);
-    if (newsockfd < 0)
-        error("ERROR on accept.");
+    auto newsockfd = accept_a_client(sockfd);
     
     char buffer[256];
     bzero(buffer, 256);
