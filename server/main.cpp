@@ -16,8 +16,12 @@ void error(const char* message) {
     exit(1);
 }
 
-struct stream_socket {
-    stream_socket() {
+struct client_socket {
+    int fd;
+};
+
+struct server_socket {
+    server_socket() {
         fd = socket(AF_INET, SOCK_STREAM, 0);
         if (fd <= 0)
             error("ERROR opening socket.");
@@ -40,7 +44,7 @@ struct stream_socket {
     auto accept_a_client() {
         struct sockaddr_in cli_addr;
         auto clilen = sizeof(cli_addr);
-        stream_socket newsock{};
+        client_socket newsock{};
         newsock.fd = accept(fd, (struct sockaddr *) &cli_addr, (socklen_t *) &clilen);
         if (newsock.fd < 0)
             error("ERROR on accept.");
@@ -50,14 +54,14 @@ struct stream_socket {
     int fd;
 };
 
-auto read_from_socket(stream_socket sock, char* buffer, int len) {
+auto read_from_socket(client_socket sock, char* buffer, int len) {
     bzero(buffer, len);
     auto n = read(sock.fd, buffer, len - 1);
     if (n < 0)
         error("ERROR reading from socket.");
 }
 
-auto write_to_socket(stream_socket sock, const char* buffer, int len) {
+auto write_to_socket(client_socket sock, const char* buffer, int len) {
     auto n = write(sock.fd, buffer, len);
     if (n < 0)
         error("ERROR writing to socket.");
@@ -69,7 +73,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    auto sock = stream_socket{};
+    auto sock = server_socket{};
 
     sock.bind_to_any(atoi(argv[1]));
 
