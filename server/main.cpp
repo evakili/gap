@@ -8,6 +8,7 @@
 #include <array>
 #include <string>
 #include <system_error>
+#include <ctime>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -83,11 +84,20 @@ bool gap_with_client(client_socket clnt) {
         auto command = std::string{ buffer.data() };
         std::cout << "Client says: " << command << std::endl;
 
-        clnt.write(std::string{ "Your message has been received!" });
 
-        if (command == "shutdown")
+        if (command == "shutdown") {
+            clnt.write(std::string{ "Have a nice day..." });
             return false;
-
+        }
+        
+        if (command == "time") {
+            auto now = std::time(nullptr);
+            clnt.write(std::string{ std::ctime(&now) });
+        }
+        else {
+            clnt.write(std::string{ "Unknow command, but no problem." });
+        }
+        
         return true;
 }
 
