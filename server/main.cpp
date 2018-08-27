@@ -107,11 +107,13 @@ bool gap_with_client(client_socket clnt) {
 int main(int argc, char *argv[]) {
     auto cmd_line = argh::parser{ argv };
     int portno{};
-    cmd_line(1, 9900) >> portno;
+    cmd_line({ "-p", "--port" }, 9900) >> portno;
 
     try {
         auto srv = server{ portno };
         srv.start();
+
+        std::cout << "gap server started listening on port: " << portno << std::endl;
 
         while (gap_with_client(srv.next_client())) {
         }
