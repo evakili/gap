@@ -9,6 +9,7 @@
 #include <string>
 #include <system_error>
 #include <ctime>
+#include <utility>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -79,21 +80,13 @@ private:
 
 auto get_command_reply(std::string command) {
     if (command == "shutdown") {
-        return std::string{ "Have a nice day..." };
+        return std::make_pair(false, std::string{ "Have a nice day..." });
     }
     if (command == "time") {
         auto now = std::time(nullptr);
-        return std::string{ std::ctime(&now) };
+        return std::make_pair(true, std::string{ std::ctime(&now) });
     }
-    return std::string{ "Unknow command, but no problem." };
-}
-
-auto get_command_result(std::string command) {
-    if (command == "shutdown") {
-        return false;
-    }
-
-    return true;
+    return std::make_pair(true, std::string{ "Unknow command, but no problem." });
 }
 
 bool gap_with_client(client_socket clnt) {
@@ -103,9 +96,10 @@ bool gap_with_client(client_socket clnt) {
     auto command = std::string{ buffer.data() };
     std::cout << "Client says: " << command << std::endl;
 
-    clnt.write(get_command_reply(command));
+    auto reply = get_command_reply(command);
+    clnt.write(reply.second);
 
-    return get_command_result(command);
+    return reply.first;
 }
 
 int main(int argc, char *argv[]) {
