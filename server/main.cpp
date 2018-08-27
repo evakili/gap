@@ -16,6 +16,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include "argh.h"
+
 void error() {
     throw std::system_error{ errno, std::system_category().default_error_condition(errno).category() };
 }
@@ -103,13 +105,12 @@ bool gap_with_client(client_socket clnt) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        std::cerr << "ERROR, no port provided." << std::endl;
-        return 1;
-    }
+    auto cmd_line = argh::parser{ argv };
+    int portno{};
+    cmd_line(1, 9900) >> portno;
 
     try {
-        auto srv = server{ atoi(argv[1]) };
+        auto srv = server{ portno };
         srv.start();
 
         while (gap_with_client(srv.next_client())) {
@@ -118,5 +119,6 @@ int main(int argc, char *argv[]) {
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
     }
+
     return 0;
 }
