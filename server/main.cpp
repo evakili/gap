@@ -77,6 +77,17 @@ private:
     }
 };
 
+auto get_command_reply(std::string command) {
+    if (command == "shutdown") {
+        return std::string{ "Have a nice day..." };
+    }
+    if (command == "time") {
+        auto now = std::time(nullptr);
+        return std::string{ std::ctime(&now) };
+    }
+    return std::string{ "Unknow command, but no problem." };
+}
+
 bool gap_with_client(client_socket clnt) {
         auto buffer = std::array<char, 256>{};
         clnt.read(buffer);
@@ -84,20 +95,12 @@ bool gap_with_client(client_socket clnt) {
         auto command = std::string{ buffer.data() };
         std::cout << "Client says: " << command << std::endl;
 
+        clnt.write(get_command_reply(command));
 
         if (command == "shutdown") {
-            clnt.write(std::string{ "Have a nice day..." });
             return false;
         }
-        
-        if (command == "time") {
-            auto now = std::time(nullptr);
-            clnt.write(std::string{ std::ctime(&now) });
-        }
-        else {
-            clnt.write(std::string{ "Unknow command, but no problem." });
-        }
-        
+
         return true;
 }
 
