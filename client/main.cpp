@@ -51,6 +51,7 @@ int main(int argc, char *argv[]) {
     bzero(buffer, 256);
     fgets(buffer, 255, stdin);
 
+    buffer[strlen(buffer) - 1] = '\0'; // remove \n from input
     n = write(sockfd, buffer, strlen(buffer));
     if (n < 0)
         error("ERROR writing to socket.");

@@ -76,12 +76,19 @@ private:
     }
 };
 
-void gap_with_client(client_socket clnt) {
+bool gap_with_client(client_socket clnt) {
         auto buffer = std::array<char, 256>{};
         clnt.read(buffer);
-        std::cout << "Client says: " << buffer.data() << std::endl;
+
+        auto command = std::string{ buffer.data() };
+        std::cout << "Client says: " << command << std::endl;
 
         clnt.write(std::string{ "Your message has been received!" });
+
+        if (command == "shutdown")
+            return false;
+
+        return true;
 }
 
 int main(int argc, char *argv[]) {
@@ -94,8 +101,8 @@ int main(int argc, char *argv[]) {
         auto srv = server{ atoi(argv[1]) };
         srv.start();
 
-        while (true)
-            gap_with_client(srv.next_client());
+        while (gap_with_client(srv.next_client())) {
+        }
     }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
