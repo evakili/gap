@@ -88,20 +88,24 @@ auto get_command_reply(std::string command) {
     return std::string{ "Unknow command, but no problem." };
 }
 
+auto get_command_result(std::string command) {
+    if (command == "shutdown") {
+        return false;
+    }
+
+    return true;
+}
+
 bool gap_with_client(client_socket clnt) {
-        auto buffer = std::array<char, 256>{};
-        clnt.read(buffer);
+    auto buffer = std::array<char, 256>{};
+    clnt.read(buffer);
 
-        auto command = std::string{ buffer.data() };
-        std::cout << "Client says: " << command << std::endl;
+    auto command = std::string{ buffer.data() };
+    std::cout << "Client says: " << command << std::endl;
 
-        clnt.write(get_command_reply(command));
+    clnt.write(get_command_reply(command));
 
-        if (command == "shutdown") {
-            return false;
-        }
-
-        return true;
+    return get_command_result(command);
 }
 
 int main(int argc, char *argv[]) {
