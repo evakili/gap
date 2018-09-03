@@ -17,6 +17,13 @@ void error(const char* message) {
     exit(0);
 }
 
+auto get_socket() {
+    auto sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0)
+        error("ERROR opening socket.");
+    return sockfd;
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 3) {
         fprintf(stderr, "usage %s hostname port\n", argv[0]);
@@ -24,9 +31,8 @@ int main(int argc, char *argv[]) {
     }
 
     auto portno = atoi(argv[2]);
-    auto sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0)
-        error("ERROR opening socket.");
+
+    auto sockfd = get_socket();
     
     auto server = gethostbyname(argv[1]);
     if (server == NULL) {
