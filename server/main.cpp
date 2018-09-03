@@ -23,14 +23,14 @@
 struct client_socket {
     explicit client_socket(int newfd) : fd_ { newfd } {
         if (fd_ < 0)
-            error();
+            throw posix_error{};
     }
 
     template<typename Container>
     auto read(Container& buffer) {
         auto n = ::read(fd_, buffer.data(), buffer.size() - 1);
         if (n < 0)
-            error();
+            throw posix_error{};
         return n;
     }
 
@@ -38,7 +38,7 @@ struct client_socket {
     auto write(const Container& buffer) {
         auto n = ::write(fd_, buffer.data(), buffer.size());
         if (n < 0)
-            error();
+            throw posix_error{};
         return n;
     }
 
@@ -50,7 +50,7 @@ struct server {
     server(int portno) {
         fd_ = socket(AF_INET, SOCK_STREAM, 0);
         if (fd_ <= 0)
-            error();
+            throw posix_error{};
         bind_to_any(portno);
     }
 
@@ -74,7 +74,7 @@ private:
         serv_addr.sin_addr.s_addr = INADDR_ANY;
         serv_addr.sin_port = htons(portno);
         if (bind(fd_, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-            error();
+            throw posix_error{};
     }
 };
 

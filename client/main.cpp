@@ -38,7 +38,7 @@ struct client {
     client(std::string address, int port) {
         fd_ = socket(AF_INET, SOCK_STREAM, 0);
         if (fd_ < 0)
-            error();
+            throw posix_error{};
         connect(get_server_address(address, port));
     }
 
@@ -46,7 +46,7 @@ struct client {
     auto write(const Container& buffer) {
         auto n = ::write(fd_, buffer.data(), buffer.size());
         if (n < 0)
-            error();
+            throw posix_error{};
         return n;
     }
 
@@ -54,14 +54,14 @@ struct client {
     auto read(Container& buffer) {
         auto n = ::read(fd_, buffer.data(), buffer.size() - 1);
         if (n < 0)
-            error();
+            throw posix_error{};
         return n;
     }
 
 private:
     void connect(struct sockaddr_in serv_addr) {
         if (::connect(fd_, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-            error();
+            throw posix_error{};
     }
 
     int fd_;
