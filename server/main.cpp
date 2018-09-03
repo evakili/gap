@@ -92,16 +92,21 @@ auto get_command_reply(std::string command) {
 }
 
 bool gap_with_client(client_socket clnt) {
-    auto buffer = std::array<char, 256>{};
-    clnt.read(buffer);
+    while (true) {
+        std::cout << "Wait for next command..." << std::endl;
+        auto buffer = std::array<char, 256>{};
+        clnt.read(buffer);
 
-    auto command = std::string{ buffer.data() };
-    std::cout << "Client says: " << command << std::endl;
+        auto command = std::string{ buffer.data() };
+        std::cout << "Client says: " << command << std::endl;
 
-    auto reply = get_command_reply(command);
-    clnt.write(reply.second);
+        auto reply = get_command_reply(command);
+        clnt.write(reply.second);
 
-    return reply.first;
+        if (!reply.first)
+            return false;
+    };
+    return true;
 }
 
 int main(int argc, char *argv[]) {
