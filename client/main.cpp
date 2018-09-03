@@ -16,13 +16,15 @@
 #include <string>
 #include <array>
 
+#include "argh.h"
+
 void error(const char* message) {
     perror(message);
     exit(0);
 }
 
-auto get_server_address(const char* name, int portno) {
-    auto server = gethostbyname(name);
+auto get_server_address(std::string name, int portno) {
+    auto server = gethostbyname(name.c_str());
     if (server == NULL) {
         fprintf(stderr, "ERROR, no such host.\n");
         exit(0);
@@ -38,7 +40,7 @@ auto get_server_address(const char* name, int portno) {
 }
 
 struct client {
-    client(const char* address, int port) {
+    client(std::string address, int port) {
         fd_ = socket(AF_INET, SOCK_STREAM, 0);
         if (fd_ < 0)
             error("ERROR opening socket.");
@@ -71,12 +73,13 @@ private:
 };
 
 int main(int argc, char *argv[]) {
-    if (argc < 3) {
-        fprintf(stderr, "usage %s hostname port\n", argv[0]);
-        exit(0);
-    }
+    auto cmd_line = argh::parser{ argv };
+    std::string address{};
+    cmd_line({ "-s", "--server" }, "localhost") >> address;
+    int portno{};
+    cmd_line({ "-p", "--port" }, 9900) >> portno;
 
-    auto clnt = client{ argv[1], atoi(argv[2]) };
+    auto clnt = client{ address, portno };
     
     std::cout << "Please enter the message: ";
     std::string message;
@@ -86,7 +89,7 @@ int main(int argc, char *argv[]) {
 
     std::array<char, 256> buffer{};
     clnt.read(buffer);
-    
+
     std::cout << buffer.data() << std::endl;
     return 0;
 }
