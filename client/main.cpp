@@ -29,6 +29,20 @@ auto socket_connect(int sockfd, struct sockaddr_in serv_addr) {
         error("ERROR connecting.");
 }
 
+auto socket_write(int sockfd, const char* buffer) {
+    auto n = write(sockfd, buffer, strlen(buffer));
+    if (n < 0)
+        error("ERROR writing to socket.");
+    return n;
+}
+
+auto socket_read(int sockfd, char* buffer, size_t length) {
+    auto n = read(sockfd, buffer, length - 1);
+    if (n < 0)
+        error("ERROR reading from socket.");
+    return n;
+}
+
 auto get_server_address(const char* name, int portno) {
     auto server = gethostbyname(name);
     if (server == NULL) {
@@ -62,14 +76,10 @@ int main(int argc, char *argv[]) {
     fgets(buffer, 255, stdin);
 
     buffer[strlen(buffer) - 1] = '\0'; // remove \n from input
-    auto n = write(sockfd, buffer, strlen(buffer));
-    if (n < 0)
-        error("ERROR writing to socket.");
-    
+    socket_write(sockfd, buffer);
+
     bzero(buffer, 256);
-    n = read(sockfd, buffer, 255);
-    if (n < 0)
-        error("ERROR reading from socket.");
+    socket_read(sockfd, buffer, 256);
     printf("%s\n", buffer);
     return 0;
 }
