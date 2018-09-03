@@ -17,10 +17,7 @@
 #include <array>
 
 #include "argh.h"
-
-void error() {
-    throw std::system_error{ errno, std::system_category().default_error_condition(errno).category() };
-}
+#include "exceptions.h"
 
 auto get_server_address(std::string name, int portno) {
     auto server = gethostbyname(name.c_str());

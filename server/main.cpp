@@ -18,10 +18,7 @@
 #include <netinet/in.h>
 
 #include "argh.h"
-
-void error() {
-    throw std::system_error{ errno, std::system_category().default_error_condition(errno).category() };
-}
+#include "exceptions.h"
 
 struct client_socket {
     explicit client_socket(int newfd) : fd_ { newfd } {
