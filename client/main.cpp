@@ -84,7 +84,7 @@ auto gap_with_server(client& clnt) {
 
     std::cout << buffer.data() << std::endl;
 
-    if (message == "bye")
+    if (message == "bye" || message == "shutdown")
         return false;
 
     return true;
