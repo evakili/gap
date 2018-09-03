@@ -24,6 +24,11 @@ auto get_socket() {
     return sockfd;
 }
 
+auto socket_connect(int sockfd, struct sockaddr_in serv_addr) {
+    if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
+        error("ERROR connecting.");
+}
+
 auto get_server_address(const char* name, int portno) {
     auto server = gethostbyname(name);
     if (server == NULL) {
@@ -48,10 +53,8 @@ int main(int argc, char *argv[]) {
 
     auto sockfd = get_socket();
     
-    auto serv_addr = get_server_address(argv[1], atoi(argv[2]));
+    socket_connect(sockfd, get_server_address(argv[1], atoi(argv[2])));
 
-    if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-        error("ERROR connecting.");
     printf("Please enter the message: ");
 
     char buffer[256];
