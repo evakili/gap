@@ -72,15 +72,7 @@ private:
     int fd_;
 };
 
-int main(int argc, char *argv[]) {
-    auto cmd_line = argh::parser{ argv };
-    std::string address{};
-    cmd_line({ "-s", "--server" }, "localhost") >> address;
-    int portno{};
-    cmd_line({ "-p", "--port" }, 9900) >> portno;
-
-    auto clnt = client{ address, portno };
-    
+auto gap_with_server(client& clnt) {
     std::cout << "Please enter the message: ";
     std::string message;
     std::cin >> message;
@@ -91,5 +83,18 @@ int main(int argc, char *argv[]) {
     clnt.read(buffer);
 
     std::cout << buffer.data() << std::endl;
+}
+
+int main(int argc, char *argv[]) {
+    auto cmd_line = argh::parser{ argv };
+    std::string address{};
+    cmd_line({ "-s", "--server" }, "localhost") >> address;
+    int portno{};
+    cmd_line({ "-p", "--port" }, 9900) >> portno;
+
+    auto clnt = client{ address, portno };
+    
+    gap_with_server(clnt);
+
     return 0;
 }
