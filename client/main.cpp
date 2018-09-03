@@ -78,8 +78,7 @@ int main(int argc, char *argv[]) {
 
     auto clnt = client{ argv[1], atoi(argv[2]) };
     
-    printf("Please enter the message: ");
-
+    std::cout << "Please enter the message: ";
     std::string message;
     std::cin >> message;
 
@@ -87,6 +86,7 @@ int main(int argc, char *argv[]) {
 
     std::array<char, 256> buffer{};
     clnt.read(buffer);
-    printf("%s\n", buffer.data());
+    
+    std::cout << buffer.data() << std::endl;
     return 0;
 }
