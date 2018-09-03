@@ -94,7 +94,8 @@ int main(int argc, char *argv[]) {
 
     auto clnt = client{ address, portno };
     
-    gap_with_server(clnt);
+    while (true)
+        gap_with_server(clnt);
 
     return 0;
 }
