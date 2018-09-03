@@ -10,6 +10,7 @@
 #include <system_error>
 #include <ctime>
 #include <utility>
+#include <thread>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -91,13 +92,13 @@ auto get_command_reply(std::string command) {
     return std::make_pair(true, std::string{ "Unknow command, but no problem." });
 }
 
-bool gap_with_client(client_socket clnt) {
+void gap_with_client(client_socket clnt) {
     while (true) {
         std::cout << "Wait for next command..." << std::endl;
         auto buffer = std::array<char, 256>{};
         if (clnt.read(buffer) <= 0) {
             std::cout << "Client is down." << std::endl;
-            return true;
+            return;
         }
 
         auto command = std::string{ buffer.data() };
@@ -106,10 +107,11 @@ bool gap_with_client(client_socket clnt) {
         auto reply = get_command_reply(command);
         clnt.write(reply.second);
 
-        if (!reply.first)
-            return false;
+        if (!reply.first) {
+            std::exit(0);
+            return;
+        }
     };
-    return true;
 }
 
 int main(int argc, char *argv[]) {
@@ -123,7 +125,8 @@ int main(int argc, char *argv[]) {
 
         std::cout << "gap server started listening on port: " << portno << std::endl;
 
-        while (gap_with_client(srv.next_client())) {
+        while (true) {
+            std::thread{ gap_with_client, srv.next_client() }.detach();
         }
     }
     catch (std::exception& e) {
