@@ -83,6 +83,11 @@ auto gap_with_server(client& clnt) {
     clnt.read(buffer);
 
     std::cout << buffer.data() << std::endl;
+
+    if (message == "bye")
+        return false;
+
+    return true;
 }
 
 int main(int argc, char *argv[]) {
@@ -94,8 +99,8 @@ int main(int argc, char *argv[]) {
 
     auto clnt = client{ address, portno };
     
-    while (true)
-        gap_with_server(clnt);
+    while (gap_with_server(clnt)) {
+    }
 
     return 0;
 }

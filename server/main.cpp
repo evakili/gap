@@ -95,7 +95,10 @@ bool gap_with_client(client_socket clnt) {
     while (true) {
         std::cout << "Wait for next command..." << std::endl;
         auto buffer = std::array<char, 256>{};
-        clnt.read(buffer);
+        if (clnt.read(buffer) <= 0) {
+            std::cout << "Client is down." << std::endl;
+            return true;
+        }
 
         auto command = std::string{ buffer.data() };
         std::cout << "Client says: " << command << std::endl;
