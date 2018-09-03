@@ -19,6 +19,9 @@
 #include "argh.h"
 #include "exceptions.h"
 
+namespace gap {
+namespace client {
+
 auto get_server_address(std::string name, int portno) {
     auto server = gethostbyname(name.c_str());
     if (server == NULL) {
@@ -85,6 +88,9 @@ auto gap_with_server(client& clnt) {
     return true;
 }
 
+}
+}
+
 int main(int argc, char *argv[]) {
     try {
         auto cmd_line = argh::parser{ argv };
@@ -93,9 +99,9 @@ int main(int argc, char *argv[]) {
         int portno{};
         cmd_line({ "-p", "--port" }, 9900) >> portno;
 
-        auto clnt = client{ address, portno };
+        auto clnt = gap::client::client{ address, portno };
         
-        while (gap_with_server(clnt)) {
+        while (gap::client::gap_with_server(clnt)) {
         }
     }
     catch(std::exception& e) {

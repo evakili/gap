@@ -20,6 +20,9 @@
 #include "argh.h"
 #include "exceptions.h"
 
+namespace gap {
+namespace server {
+
 struct client_socket {
     explicit client_socket(int newfd) : fd_ { newfd } {
         if (fd_ < 0)
@@ -111,19 +114,22 @@ void gap_with_client(client_socket clnt) {
     };
 }
 
+}
+}
+
 int main(int argc, char *argv[]) {
     auto cmd_line = argh::parser{ argv };
     int portno{};
     cmd_line({ "-p", "--port" }, 9900) >> portno;
 
     try {
-        auto srv = server{ portno };
+        auto srv = gap::server::server{ portno };
         srv.start();
 
         std::cout << "gap server started listening on port: " << portno << std::endl;
 
         while (true) {
-            std::thread{ gap_with_client, srv.next_client() }.detach();
+            std::thread{ gap::server::gap_with_client, srv.next_client() }.detach();
         }
     }
     catch (std::exception& e) {
