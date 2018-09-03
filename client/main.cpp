@@ -12,6 +12,10 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include <iostream>
+#include <string>
+#include <array>
+
 void error(const char* message) {
     perror(message);
     exit(0);
@@ -41,15 +45,17 @@ struct client {
         connect(get_server_address(address, port));
     }
 
-    auto write(const char* buffer) {
-        auto n = ::write(fd_, buffer, strlen(buffer));
+    template<typename Container>
+    auto write(const Container& buffer) {
+        auto n = ::write(fd_, buffer.data(), buffer.size());
         if (n < 0)
             error("ERROR writing to socket.");
         return n;
     }
 
-    auto read(char* buffer, size_t length) {
-        auto n = ::read(fd_, buffer, length - 1);
+    template<typename Container>
+    auto read(Container& buffer) {
+        auto n = ::read(fd_, buffer.data(), buffer.size() - 1);
         if (n < 0)
             error("ERROR reading from socket.");
         return n;
@@ -74,15 +80,13 @@ int main(int argc, char *argv[]) {
     
     printf("Please enter the message: ");
 
-    char buffer[256];
-    bzero(buffer, 256);
-    fgets(buffer, 255, stdin);
+    std::string message;
+    std::cin >> message;
 
-    buffer[strlen(buffer) - 1] = '\0'; // remove \n from input
-    clnt.write(buffer);
+    clnt.write(message);
 
-    bzero(buffer, 256);
-    clnt.read(buffer, 256);
-    printf("%s\n", buffer);
+    std::array<char, 256> buffer{};
+    clnt.read(buffer);
+    printf("%s\n", buffer.data());
     return 0;
 }
