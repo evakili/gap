@@ -24,17 +24,8 @@ auto get_socket() {
     return sockfd;
 }
 
-int main(int argc, char *argv[]) {
-    if (argc < 3) {
-        fprintf(stderr, "usage %s hostname port\n", argv[0]);
-        exit(0);
-    }
-
-    auto portno = atoi(argv[2]);
-
-    auto sockfd = get_socket();
-    
-    auto server = gethostbyname(argv[1]);
+auto get_server_address(const char* name, int portno) {
+    auto server = gethostbyname(name);
     if (server == NULL) {
         fprintf(stderr, "ERROR, no such host.\n");
         exit(0);
@@ -45,6 +36,19 @@ int main(int argc, char *argv[]) {
     serv_addr.sin_family = AF_INET;
     bcopy((char *) server->h_addr, (char*)&serv_addr.sin_addr.s_addr, server->h_length);
     serv_addr.sin_port = htons(portno);
+
+    return serv_addr;
+}
+
+int main(int argc, char *argv[]) {
+    if (argc < 3) {
+        fprintf(stderr, "usage %s hostname port\n", argv[0]);
+        exit(0);
+    }
+
+    auto sockfd = get_socket();
+    
+    auto serv_addr = get_server_address(argv[1], atoi(argv[2]));
 
     if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
         error("ERROR connecting.");
