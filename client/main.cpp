@@ -18,16 +18,14 @@
 
 #include "argh.h"
 
-void error(const char* message) {
-    perror(message);
-    exit(0);
+void error() {
+    throw std::system_error{ errno, std::system_category().default_error_condition(errno).category() };
 }
 
 auto get_server_address(std::string name, int portno) {
     auto server = gethostbyname(name.c_str());
     if (server == NULL) {
-        fprintf(stderr, "ERROR, no such host.\n");
-        exit(0);
+        throw std::runtime_error{ "No such host"};
     }
 
     struct sockaddr_in serv_addr;
@@ -43,7 +41,7 @@ struct client {
     client(std::string address, int port) {
         fd_ = socket(AF_INET, SOCK_STREAM, 0);
         if (fd_ < 0)
-            error("ERROR opening socket.");
+            error();
         connect(get_server_address(address, port));
     }
 
@@ -51,7 +49,7 @@ struct client {
     auto write(const Container& buffer) {
         auto n = ::write(fd_, buffer.data(), buffer.size());
         if (n < 0)
-            error("ERROR writing to socket.");
+            error();
         return n;
     }
 
@@ -59,14 +57,14 @@ struct client {
     auto read(Container& buffer) {
         auto n = ::read(fd_, buffer.data(), buffer.size() - 1);
         if (n < 0)
-            error("ERROR reading from socket.");
+            error();
         return n;
     }
 
 private:
     void connect(struct sockaddr_in serv_addr) {
         if (::connect(fd_, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-            error("ERROR connecting.");
+            error();
     }
 
     int fd_;
@@ -91,15 +89,20 @@ auto gap_with_server(client& clnt) {
 }
 
 int main(int argc, char *argv[]) {
-    auto cmd_line = argh::parser{ argv };
-    std::string address{};
-    cmd_line({ "-s", "--server" }, "localhost") >> address;
-    int portno{};
-    cmd_line({ "-p", "--port" }, 9900) >> portno;
+    try {
+        auto cmd_line = argh::parser{ argv };
+        std::string address{};
+        cmd_line({ "-s", "--server" }, "localhost") >> address;
+        int portno{};
+        cmd_line({ "-p", "--port" }, 9900) >> portno;
 
-    auto clnt = client{ address, portno };
-    
-    while (gap_with_server(clnt)) {
+        auto clnt = client{ address, portno };
+        
+        while (gap_with_server(clnt)) {
+        }
+    }
+    catch(std::exception& e) {
+        std::cerr << e.what() << std::endl;
     }
 
     return 0;
