@@ -3,15 +3,6 @@
 *   http://www.cs.rpi.edu/~moorthy/Courses/os98/Pgms/socket.html
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-
 #include <iostream>
 #include <string>
 #include <array>
@@ -19,7 +10,6 @@
 #include <boost/asio.hpp>
 
 #include "argh.h"
-#include "exceptions.h"
 
 using boost::asio::ip::tcp;
 
