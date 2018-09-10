@@ -8,6 +8,7 @@
 #include <string>
 #include <ctime>
 #include <thread>
+#include <functional>
 
 #include <boost/asio.hpp>
 
@@ -77,21 +78,38 @@ private:
     tcp::acceptor acceptor_;
 };
 
-auto get_command_reply(std::string command) {
+using command_action = std::function<void(client&)>;
+
+void default_action(client& clnt, std::string message) {
+    clnt.write(message);
+}
+
+void shutdown_action(client& clnt, std::string message) {
+    default_action(clnt, message);
+    std::exit(0);
+}
+
+void login_action(client& clnt, std::string message) {
+    default_action(clnt, message);
+    clnt.set_authenticated();
+}
+
+command_action get_command_reply(std::string command) {
+    using namespace std::placeholders;
     if (command == "login") {
-        return std::make_pair(true, std::string{ "hello!\n" });
+        return std::bind(login_action, _1, std::string{ "Hello!\n" });
     }
     if (command == "bye") {
-        return std::make_pair(true, std::string{ "See you soon...\n" });
+        return std::bind(default_action, _1, std::string{ "See you soon...\n" });
     }
     if (command == "shutdown") {
-        return std::make_pair(false, std::string{ "Have a nice day...\n" });
+        return std::bind(shutdown_action, _1, std::string{ "Have a nice day...\n" });
     }
     if (command == "time") {
         auto now = std::time(nullptr);
-        return std::make_pair(true, std::string{ std::ctime(&now) }.append("\n"));
+        return std::bind(default_action, _1, std::string{ std::ctime(&now) }.append("\n"));
     }
-    return std::make_pair(true, std::string{ "Unknow command, but no problem.\n" });
+    return std::bind(default_action, _1, std::string{ "Unknow command, but no problem.\n" });
 }
 
 void gap_with_client(client clnt, int clnt_no) {
@@ -107,22 +125,13 @@ void gap_with_client(client clnt, int clnt_no) {
         std::cout << "Client " << clnt_no << " says: " << command << std::endl;
         command.pop_back(); // remove trailing \n
 
-        if (command == "login") {
-            clnt.set_authenticated();
-        }
-
         if (!clnt.is_authenticated()) {
-            clnt.write("you are not authenticated yet.\n");
+            default_action(clnt, "you are not authenticated yet.\n");
             continue;
         }
 
-        auto reply = get_command_reply(command);
-        clnt.write(reply.second);
-
-        if (!reply.first) {
-            std::exit(0);
-            return;
-        }
+        auto action = get_command_reply(command);
+        action(clnt);
     };
 }
 
