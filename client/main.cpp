@@ -16,58 +16,48 @@
 #include <string>
 #include <array>
 
+#include <boost/asio.hpp>
+
 #include "argh.h"
 #include "exceptions.h"
+
+using boost::asio::ip::tcp;
 
 namespace gap {
 namespace client {
 
-auto get_server_address(std::string name, int portno) {
-    auto server = gethostbyname(name.c_str());
-    if (server == NULL) {
-        throw std::runtime_error{ "No such host"};
-    }
-
-    struct sockaddr_in serv_addr;
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    bcopy((char *) server->h_addr, (char*)&serv_addr.sin_addr.s_addr, server->h_length);
-    serv_addr.sin_port = htons(portno);
-
-    return serv_addr;
-}
-
 struct client {
-    client(std::string address, int port) {
-        fd_ = socket(AF_INET, SOCK_STREAM, 0);
-        if (fd_ < 0)
-            throw posix_error{};
-        connect(get_server_address(address, port));
+    client(boost::asio::io_service& io_service, tcp::resolver::iterator ep_it) :
+        io_service_{ io_service }, sock_{ io_service } {
+        connect(ep_it);
     }
 
     template<typename Container>
     auto write(const Container& buffer) {
-        auto n = ::write(fd_, buffer.data(), buffer.size());
-        if (n < 0)
-            throw posix_error{};
-        return n;
+        return boost::asio::write(sock_, boost::asio::buffer(buffer));
     }
 
     template<typename Container>
     auto read(Container& buffer) {
-        auto n = ::read(fd_, buffer.data(), buffer.size() - 1);
-        if (n < 0)
-            throw posix_error{};
-        return n;
+        using namespace std::placeholders;
+        return boost::asio::read(sock_, boost::asio::buffer(buffer),
+            std::bind(&client::read_complete, this, buffer.data(), _1, _2));
     }
 
 private:
-    void connect(struct sockaddr_in serv_addr) {
-        if (::connect(fd_, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-            throw posix_error{};
+    size_t read_complete(const char* buf, const boost::system::error_code& err, size_t bytes) {
+        if (err)
+            return 0;
+        bool found = std::find(buf, buf + bytes, '\n') < buf + bytes;
+        return found ? 0 : 1;
     }
 
-    int fd_;
+    void connect(tcp::resolver::iterator ep_it) {
+        boost::asio::connect(sock_, ep_it);
+    }
+
+    boost::asio::ip::tcp::socket sock_;
+    boost::asio::io_service& io_service_;
 };
 
 auto gap_with_server(client& clnt) {
@@ -96,10 +86,12 @@ int main(int argc, char *argv[]) {
         auto cmd_line = argh::parser{ argv };
         std::string address{};
         cmd_line({ "-s", "--server" }, "localhost") >> address;
-        int portno{};
-        cmd_line({ "-p", "--port" }, 9900) >> portno;
+        std::string portno{};
+        cmd_line({ "-p", "--port" }, "9900") >> portno;
 
-        auto clnt = gap::client::client{ address, portno };
+        boost::asio::io_service io_service{};
+        auto ep_it = tcp::resolver{ io_service }.resolve({ address, portno });
+        auto clnt = gap::client::client{ io_service, ep_it };
         
         while (gap::client::gap_with_server(clnt)) {
         }

@@ -83,13 +83,13 @@ private:
 
 auto get_command_reply(std::string command) {
     if (command == "shutdown") {
-        return std::make_pair(false, std::string{ "Have a nice day..." });
+        return std::make_pair(false, std::string{ "Have a nice day...\n" });
     }
     if (command == "time") {
         auto now = std::time(nullptr);
-        return std::make_pair(true, std::string{ std::ctime(&now) });
+        return std::make_pair(true, std::string{ std::ctime(&now) }.append("\n"));
     }
-    return std::make_pair(true, std::string{ "Unknow command, but no problem." });
+    return std::make_pair(true, std::string{ "Unknow command, but no problem.\n" });
 }
 
 void gap_with_client(client_socket clnt) {
