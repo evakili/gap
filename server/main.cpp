@@ -17,68 +17,63 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include <boost/asio.hpp>
+
 #include "argh.h"
 #include "exceptions.h"
+
+using boost::asio::ip::tcp;
 
 namespace gap {
 namespace server {
 
-struct client_socket {
-    explicit client_socket(int newfd) : fd_ { newfd } {
-        if (fd_ < 0)
-            throw posix_error{};
-    }
-
-    template<typename Container>
-    auto read(Container& buffer) {
-        auto n = ::read(fd_, buffer.data(), buffer.size() - 1);
-        if (n < 0)
-            throw posix_error{};
-        return n;
+struct client {
+    explicit client(tcp::socket sock) : sock_ { std::move(sock) } {
     }
 
     template<typename Container>
     auto write(const Container& buffer) {
-        auto n = ::write(fd_, buffer.data(), buffer.size());
-        if (n < 0)
-            throw posix_error{};
-        return n;
+        return boost::asio::write(sock_, boost::asio::buffer(buffer));
+    }
+
+    template<typename Container>
+    auto read(Container& buffer) {
+        using namespace std::placeholders;
+        boost::system::error_code ec;
+        auto n = boost::asio::read(sock_, boost::asio::buffer(buffer),
+            std::bind(&client::read_complete, this, buffer.data(), _1, _2), ec);
+        if (!ec || ec == boost::asio::error::eof)
+            return n; // Connection closed cleanly by peer.
+        else
+            throw boost::system::system_error(ec);
     }
 
 private:
-    int fd_;
+    size_t read_complete(const char* buf, const boost::system::error_code& err, size_t bytes) {
+        if (err)
+            return 0;
+        bool found = std::find(buf, buf + bytes, '\n') < buf + bytes;
+        return found ? 0 : 1;
+    }
+
+    tcp::socket sock_;
 };
 
 struct server {
-    server(int portno) {
-        fd_ = socket(AF_INET, SOCK_STREAM, 0);
-        if (fd_ <= 0)
-            throw posix_error{};
-        bind_to_any(portno);
+    server(boost::asio::io_service& io_service, unsigned short portno) :
+        io_service_ { io_service },
+        acceptor_ { io_service, tcp::endpoint{ tcp::v4(), portno } } {
     }
 
-    void start() {
-        ::listen(fd_, 5) ;
-    }
-
-    client_socket next_client() {
-        struct sockaddr_in cli_addr;
-        auto clilen = sizeof(cli_addr);
-        return client_socket{ accept(fd_, (struct sockaddr *) &cli_addr, (socklen_t *) &clilen) };
+    client next_client() {
+        tcp::socket sock(io_service_);
+        acceptor_.accept(sock);
+        return client{ std::move(sock) };
     }
 
 private:
-    int fd_;
-
-    void bind_to_any(int portno) const {
-        struct sockaddr_in serv_addr;
-        bzero((char *) &serv_addr, sizeof(serv_addr));
-        serv_addr.sin_family = AF_INET;
-        serv_addr.sin_addr.s_addr = INADDR_ANY;
-        serv_addr.sin_port = htons(portno);
-        if (bind(fd_, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-            throw posix_error{};
-    }
+    boost::asio::io_service& io_service_;
+    tcp::acceptor acceptor_;
 };
 
 auto get_command_reply(std::string command) {
@@ -92,7 +87,7 @@ auto get_command_reply(std::string command) {
     return std::make_pair(true, std::string{ "Unknow command, but no problem.\n" });
 }
 
-void gap_with_client(client_socket clnt) {
+void gap_with_client(client clnt) {
     while (true) {
         std::cout << "Wait for next command..." << std::endl;
         auto buffer = std::array<char, 256>{};
@@ -103,6 +98,7 @@ void gap_with_client(client_socket clnt) {
 
         auto command = std::string{ buffer.data() };
         std::cout << "Client says: " << command << std::endl;
+        command.pop_back(); // remove trailing \n
 
         auto reply = get_command_reply(command);
         clnt.write(reply.second);
@@ -119,17 +115,18 @@ void gap_with_client(client_socket clnt) {
 
 int main(int argc, char *argv[]) {
     auto cmd_line = argh::parser{ argv };
-    int portno{};
+    unsigned short portno{};
     cmd_line({ "-p", "--port" }, 9900) >> portno;
 
     try {
-        auto srv = gap::server::server{ portno };
-        srv.start();
+        boost::asio::io_service io_service;
+
+        auto srv = gap::server::server{ io_service, portno };
 
         std::cout << "gap server started listening on port: " << portno << std::endl;
 
         while (true) {
-            std::thread{ gap::server::gap_with_client, srv.next_client() }.detach();
+            std::thread{ gap::server::gap_with_client, std::move(srv.next_client()) }.detach();
         }
     }
     catch (std::exception& e) {

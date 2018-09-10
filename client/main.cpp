@@ -30,8 +30,13 @@ struct client {
     template<typename Container>
     auto read(Container& buffer) {
         using namespace std::placeholders;
-        return boost::asio::read(sock_, boost::asio::buffer(buffer),
-            std::bind(&client::read_complete, this, buffer.data(), _1, _2));
+        boost::system::error_code ec;
+        auto n = boost::asio::read(sock_, boost::asio::buffer(buffer),
+            std::bind(&client::read_complete, this, buffer.data(), _1, _2), ec);
+        if (!ec || ec == boost::asio::error::eof)
+            return n; // Connection closed cleanly by peer.
+        else
+            throw boost::system::system_error(ec);
     }
 
 private:
@@ -46,14 +51,15 @@ private:
         boost::asio::connect(sock_, ep_it);
     }
 
-    boost::asio::ip::tcp::socket sock_;
     boost::asio::io_service& io_service_;
+    boost::asio::ip::tcp::socket sock_;
 };
 
 auto gap_with_server(client& clnt) {
     std::cout << "Please enter the message: ";
     std::string message;
     std::cin >> message;
+    message.append("\n");
 
     clnt.write(message);
 
@@ -62,7 +68,7 @@ auto gap_with_server(client& clnt) {
 
     std::cout << buffer.data() << std::endl;
 
-    if (message == "bye" || message == "shutdown")
+    if (message == "bye\n" || message == "shutdown\n")
         return false;
 
     return true;
