@@ -3,24 +3,15 @@
 *   http://www.cs.rpi.edu/~moorthy/Courses/os98/Pgms/socket.html
 */
 
-#include <cstring>
 #include <iostream>
 #include <array>
 #include <string>
-#include <system_error>
 #include <ctime>
-#include <utility>
 #include <thread>
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 
 #include <boost/asio.hpp>
 
 #include "argh.h"
-#include "exceptions.h"
 
 using boost::asio::ip::tcp;
 
