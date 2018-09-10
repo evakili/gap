@@ -81,17 +81,25 @@ private:
 using command_action = std::function<void(client&)>;
 
 void default_action(client& clnt, std::string message) {
-    clnt.write(message);
+    if (clnt.is_authenticated())
+        clnt.write(message);
+    else
+        clnt.write("you are not authenticated yet.\n");
 }
 
 void shutdown_action(client& clnt, std::string message) {
-    default_action(clnt, message);
-    std::exit(0);
+    if (clnt.is_authenticated()) {
+        default_action(clnt, message);
+        std::exit(0);
+    }
+    else {
+        clnt.write("you are not authenticated yet.\n");
+    }
 }
 
 void login_action(client& clnt, std::string message) {
-    default_action(clnt, message);
     clnt.set_authenticated();
+    default_action(clnt, message);
 }
 
 command_action get_command_reply(std::string command) {
@@ -124,11 +132,6 @@ void gap_with_client(client clnt, int clnt_no) {
         auto command = std::string{ buffer.data() };
         std::cout << "Client " << clnt_no << " says: " << command << std::endl;
         command.pop_back(); // remove trailing \n
-
-        if (!clnt.is_authenticated()) {
-            default_action(clnt, "you are not authenticated yet.\n");
-            continue;
-        }
 
         auto action = get_command_reply(command);
         action(clnt);
