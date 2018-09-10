@@ -77,6 +77,9 @@ private:
 };
 
 auto get_command_reply(std::string command) {
+    if (command == "bye") {
+        return std::make_pair(true, std::string{ "See you soon...\n" });
+    }
     if (command == "shutdown") {
         return std::make_pair(false, std::string{ "Have a nice day...\n" });
     }
@@ -87,17 +90,17 @@ auto get_command_reply(std::string command) {
     return std::make_pair(true, std::string{ "Unknow command, but no problem.\n" });
 }
 
-void gap_with_client(client clnt) {
+void gap_with_client(client clnt, int clnt_no) {
     while (true) {
-        std::cout << "Wait for next command..." << std::endl;
+        std::cout << "Server: Wait for next command from clint " << clnt_no << "..." << std::endl;
         auto buffer = std::array<char, 256>{};
         if (clnt.read(buffer) <= 0) {
-            std::cout << "Client is down." << std::endl;
+            std::cout << "Server: Client " << clnt_no << " is down.\n" << std::endl;
             return;
         }
 
         auto command = std::string{ buffer.data() };
-        std::cout << "Client says: " << command << std::endl;
+        std::cout << "Client " << clnt_no << " says: " << command << std::endl;
         command.pop_back(); // remove trailing \n
 
         auto reply = get_command_reply(command);
@@ -123,10 +126,12 @@ int main(int argc, char *argv[]) {
 
         auto srv = gap::server::server{ io_service, portno };
 
-        std::cout << "gap server started listening on port: " << portno << std::endl;
+        std::cout << "Server: gap started listening on port: " << portno << std::endl;
 
+        auto clnt_no = 0;
         while (true) {
-            std::thread{ gap::server::gap_with_client, std::move(srv.next_client()) }.detach();
+            clnt_no++;
+            std::thread{ gap::server::gap_with_client, std::move(srv.next_client()), clnt_no }.detach();
         }
     }
     catch (std::exception& e) {
