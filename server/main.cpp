@@ -48,6 +48,10 @@ struct client {
             throw boost::system::system_error(ec);
     }
 
+    bool is_authenticated() {
+        return false;
+    }
+
 private:
     size_t read_complete(const char* buf, const boost::system::error_code& err, size_t bytes) {
         if (err)
@@ -97,6 +101,11 @@ void gap_with_client(client clnt, int clnt_no) {
         if (clnt.read(buffer) <= 0) {
             std::cout << "Server: Client " << clnt_no << " is down.\n" << std::endl;
             return;
+        }
+
+        if (!clnt.is_authenticated()) {
+            clnt.write("you are not authenticated yet.\n");
+            continue;
         }
 
         auto command = std::string{ buffer.data() };
