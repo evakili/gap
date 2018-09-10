@@ -28,7 +28,8 @@ namespace gap {
 namespace server {
 
 struct client {
-    explicit client(tcp::socket sock) : sock_ { std::move(sock) } {
+    explicit client(tcp::socket sock) :
+        sock_ { std::move(sock) }, authenticated_{ false } {
     }
 
     template<typename Container>
@@ -49,7 +50,11 @@ struct client {
     }
 
     bool is_authenticated() {
-        return false;
+        return authenticated_;
+    }
+
+    void set_authenticated() {
+        authenticated_ = true;
     }
 
 private:
@@ -61,6 +66,7 @@ private:
     }
 
     tcp::socket sock_;
+    bool authenticated_;
 };
 
 struct server {
@@ -81,6 +87,9 @@ private:
 };
 
 auto get_command_reply(std::string command) {
+    if (command == "login") {
+        return std::make_pair(true, std::string{ "hello!\n" });
+    }
     if (command == "bye") {
         return std::make_pair(true, std::string{ "See you soon...\n" });
     }
@@ -103,14 +112,18 @@ void gap_with_client(client clnt, int clnt_no) {
             return;
         }
 
+        auto command = std::string{ buffer.data() };
+        std::cout << "Client " << clnt_no << " says: " << command << std::endl;
+        command.pop_back(); // remove trailing \n
+
+        if (command == "login") {
+            clnt.set_authenticated();
+        }
+
         if (!clnt.is_authenticated()) {
             clnt.write("you are not authenticated yet.\n");
             continue;
         }
-
-        auto command = std::string{ buffer.data() };
-        std::cout << "Client " << clnt_no << " says: " << command << std::endl;
-        command.pop_back(); // remove trailing \n
 
         auto reply = get_command_reply(command);
         clnt.write(reply.second);
