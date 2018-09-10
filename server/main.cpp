@@ -9,6 +9,7 @@
 #include <ctime>
 #include <thread>
 #include <functional>
+#include <map>
 
 #include <boost/asio.hpp>
 
@@ -87,9 +88,9 @@ void default_action(client& clnt, std::string message) {
         clnt.write("you are not authenticated yet.\n");
 }
 
-void shutdown_action(client& clnt, std::string message) {
+void shutdown_action(client& clnt) {
     if (clnt.is_authenticated()) {
-        default_action(clnt, message);
+        default_action(clnt, "Have a nice day...\n");
         std::exit(0);
     }
     else {
@@ -97,26 +98,36 @@ void shutdown_action(client& clnt, std::string message) {
     }
 }
 
-void login_action(client& clnt, std::string message) {
-    clnt.set_authenticated();
-    default_action(clnt, message);
+void bye_action(client& clnt) {
+    default_action(clnt, "See you soon...\n");
 }
+
+void login_action(client& clnt) {
+    clnt.set_authenticated();
+    default_action(clnt, "Hello!\n");
+}
+
+void time_action(client& clnt) {
+    if (clnt.is_authenticated()) {
+        auto now = std::time(nullptr);
+        default_action(clnt, std::string{ std::ctime(&now) }.append("\n"));
+    } else {
+        clnt.write("you are not authenticated yet.\n");
+    }
+}
+
+const std::map<std::string, command_action> action_map = {
+    { "login", login_action },
+    { "bye", bye_action },
+    { "time", time_action },
+    { "shutdown", shutdown_action },
+};
 
 command_action get_command_reply(std::string command) {
     using namespace std::placeholders;
-    if (command == "login") {
-        return std::bind(login_action, _1, std::string{ "Hello!\n" });
-    }
-    if (command == "bye") {
-        return std::bind(default_action, _1, std::string{ "See you soon...\n" });
-    }
-    if (command == "shutdown") {
-        return std::bind(shutdown_action, _1, std::string{ "Have a nice day...\n" });
-    }
-    if (command == "time") {
-        auto now = std::time(nullptr);
-        return std::bind(default_action, _1, std::string{ std::ctime(&now) }.append("\n"));
-    }
+    auto action = action_map.find(command);
+    if (action != action_map.end())
+        return action->second;
     return std::bind(default_action, _1, std::string{ "Unknow command, but no problem.\n" });
 }
 
