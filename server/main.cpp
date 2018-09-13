@@ -131,6 +131,16 @@ command_action get_command_reply(std::string command) {
     return std::bind(default_action, _1, std::string{ "Unknow command, but no problem.\n" });
 }
 
+auto parse_command(std::string command) {
+    auto paramsPos = command.find(':');
+    auto params = std::string{};
+    if (paramsPos != std::string::npos) {
+        params = command.substr(paramsPos + 1);
+        command.erase(paramsPos);
+    }
+    return std::make_pair(command, params);
+}
+
 void gap_with_client(client clnt, int clnt_no) {
     while (true) {
         std::cout << "[Server] Client " << clnt_no << " is connected." << std::endl;
@@ -143,12 +153,9 @@ void gap_with_client(client clnt, int clnt_no) {
         auto command = std::string{ buffer.data() };
         command.pop_back(); // remove trailing \n
 
-        auto paramsPos = command.find(':');
-        auto params = std::string{};
-        if (paramsPos != std::string::npos) {
-            params = command.substr(paramsPos + 1);
-            command.erase(paramsPos);
-        }
+        auto parsed = parse_command(command);
+        command = parsed.first;
+        auto params = parsed.second;
 
         std::cout << "[Client " << clnt_no << "] command: " << command << ", params: " << params << std::endl;
 
