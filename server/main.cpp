@@ -56,7 +56,7 @@ struct client {
         return username_;
     }
 
-    bool authenticate(std::pair<std::string, std::string> credentials) {
+    bool try_login(std::pair<std::string, std::string> credentials) {
         authenticated_ = false;
         auto user = users.find(credentials.first);
         if (user != users.end())
@@ -65,6 +65,11 @@ struct client {
                 authenticated_ = true;
             }
         return authenticated_;
+    }
+
+    void logoff() {
+        username_.clear();
+        authenticated_ = false;
     }
 
 private:
@@ -133,11 +138,16 @@ void login_action(client& clnt, std::string params) {
         default_action(clnt, "", "Please provide username!\n");
     }
     else {
-        if (clnt.authenticate(parse_login_params(params)))
+        if (clnt.try_login(parse_login_params(params)))
             default_action(clnt, "", "Hello " + clnt.username() + "!\n");
         else
             default_action(clnt, "", "Invalid username or password!\n");
     }
+}
+
+void logoff_action(client& clnt, std::string params) {
+    clnt.logoff();
+    default_action(clnt, "", "Miss you...\n");
 }
 
 void time_action(client& clnt, std::string params) {
@@ -151,6 +161,7 @@ void time_action(client& clnt, std::string params) {
 
 const std::map<std::string, command_action> action_map = {
     { "login", login_action },
+    { "logoff", logoff_action },
     { "bye", bye_action },
     { "time", time_action },
     { "shutdown", shutdown_action },
