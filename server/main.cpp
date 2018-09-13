@@ -9,6 +9,7 @@
 #include <ctime>
 #include <thread>
 #include <functional>
+#include <vector>
 #include <map>
 
 #include <boost/asio.hpp>
@@ -19,6 +20,10 @@ using boost::asio::ip::tcp;
 
 namespace gap {
 namespace server {
+
+const auto users = std::vector<std::string>{
+    "hasan", "reza", "ali"
+};
 
 struct client {
     explicit client(tcp::socket sock) :
@@ -46,8 +51,12 @@ struct client {
         return authenticated_;
     }
 
-    void set_authenticated() {
-        authenticated_ = true;
+    bool authenticate(std::string params) {
+        if (std::find(users.begin(), users.end(), params) != users.end())
+            authenticated_ = true;
+        else
+            authenticated_ = false;
+        return authenticated_;
     }
 
 private:
@@ -101,11 +110,13 @@ void bye_action(client& clnt, std::string params) {
 
 void login_action(client& clnt, std::string params) {
     if (params.empty()) {
-        default_action(clnt, "", "Please provide username!\n");  
+        default_action(clnt, "", "Please provide username!\n");
     }
     else {
-        clnt.set_authenticated();
-        default_action(clnt, "", "Hello " + params + "!\n");
+        if (clnt.authenticate(params))
+            default_action(clnt, "", "Hello " + params + "!\n");
+        else
+            default_action(clnt, "", "Invalid username!\n");
     }
 }
 
