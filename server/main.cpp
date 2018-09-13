@@ -9,7 +9,6 @@
 #include <ctime>
 #include <thread>
 #include <functional>
-#include <vector>
 #include <map>
 
 #include <boost/asio.hpp>
@@ -21,8 +20,10 @@ using boost::asio::ip::tcp;
 namespace gap {
 namespace server {
 
-const auto users = std::vector<std::string>{
-    "hasan", "reza", "ali"
+const auto users = std::map<std::string, std::string>{
+    { "hasan", "123" },
+    { "reza", "abc" },
+    { "ali", "qaz" }
 };
 
 struct client {
@@ -51,11 +52,12 @@ struct client {
         return authenticated_;
     }
 
-    bool authenticate(std::string params) {
-        if (std::find(users.begin(), users.end(), params) != users.end())
-            authenticated_ = true;
-        else
-            authenticated_ = false;
+    bool authenticate(std::string username, std::string password) {
+        authenticated_ = false;
+        auto user = users.find(username);
+        if (user != users.end())
+            if (user->second == password)
+                authenticated_ = true;
         return authenticated_;
     }
 
@@ -113,10 +115,17 @@ void login_action(client& clnt, std::string params) {
         default_action(clnt, "", "Please provide username!\n");
     }
     else {
-        if (clnt.authenticate(params))
-            default_action(clnt, "", "Hello " + params + "!\n");
+        auto pos = params.find(';');
+        auto username = params;
+        auto password = std::string{};
+        if (pos != std::string::npos) {
+            username = params.substr(0, pos);
+            password = params.substr(pos + 1);
+        }
+        if (clnt.authenticate(username, password))
+            default_action(clnt, "", "Hello " + username + "!\n");
         else
-            default_action(clnt, "", "Invalid username!\n");
+            default_action(clnt, "", "Invalid username or password!\n");
     }
 }
 
