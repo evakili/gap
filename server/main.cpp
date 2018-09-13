@@ -141,8 +141,16 @@ void gap_with_client(client clnt, int clnt_no) {
         }
 
         auto command = std::string{ buffer.data() };
-        std::cout << "Client " << clnt_no << " says: " << command << std::endl;
         command.pop_back(); // remove trailing \n
+
+        auto paramsPos = command.find(':');
+        auto params = std::string{};
+        if (paramsPos != std::string::npos) {
+            params = command.substr(paramsPos + 1);
+            command.erase(paramsPos);
+        }
+
+        std::cout << "[Client " << clnt_no << "] command: " << command << ", params: " << params << std::endl;
 
         auto action = get_command_reply(command);
         action(clnt);

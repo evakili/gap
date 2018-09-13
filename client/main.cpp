@@ -56,7 +56,7 @@ private:
 };
 
 auto gap_with_server(client& clnt) {
-    std::cout << "Please enter the message: ";
+    std::cout << "> ";
     std::string message;
     std::cin >> message;
     message.append("\n");
