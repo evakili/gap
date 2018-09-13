@@ -10,6 +10,7 @@
 #include <thread>
 #include <functional>
 #include <map>
+#include <fstream>
 
 #include <boost/asio.hpp>
 
@@ -32,6 +33,16 @@ bool volatile_authenticator(const credentials& creds) {
     auto user = users.find(creds.first);
     if (user != users.end())
         if (user->second == creds.second)
+            return true;
+    return false;
+}
+
+bool persistant_authenticator(const credentials& creds) {
+    auto in = std::ifstream{ "/etc/gap/users.dat" };
+    auto username = std::string{};
+    auto password = std::string{};
+    while (in >> username >> password)
+        if (username == creds.first && password == creds.second)
             return true;
     return false;
 }
@@ -68,7 +79,7 @@ struct client {
 
     bool try_login(const credentials& creds) {
         authenticated_ = false;
-        if (volatile_authenticator(creds)) {
+        if (persistant_authenticator(creds)) {
             username_ = creds.first;
             authenticated_ = true;
         }
