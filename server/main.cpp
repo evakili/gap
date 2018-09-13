@@ -133,10 +133,10 @@ command_action get_command_reply(std::string command) {
 
 void gap_with_client(client clnt, int clnt_no) {
     while (true) {
-        std::cout << "Server: Wait for next command from clint " << clnt_no << "..." << std::endl;
+        std::cout << "[Server] Client " << clnt_no << " is connected." << std::endl;
         auto buffer = std::array<char, 256>{};
         if (clnt.read(buffer) <= 0) {
-            std::cout << "Server: Client " << clnt_no << " is down.\n" << std::endl;
+            std::cout << "[Server] Client " << clnt_no << " is down.\n" << std::endl;
             return;
         }
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
 
         auto srv = gap::server::server{ io_service, portno };
 
-        std::cout << "Server: gap started listening on port: " << portno << std::endl;
+        std::cout << "[Server] Gap is started, listening on port " << portno << "." << std::endl;
 
         auto clnt_no = 0;
         while (true) {
