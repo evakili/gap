@@ -82,10 +82,7 @@ private:
 using command_action = std::function<void(client&, std::string)>;
 
 void default_action(client& clnt, std::string params, std::string message) {
-    if (clnt.is_authenticated())
-        clnt.write(message);
-    else
-        clnt.write("you are not authenticated yet.\n");
+    clnt.write(message);
 }
 
 void shutdown_action(client& clnt, std::string params) {
@@ -94,7 +91,7 @@ void shutdown_action(client& clnt, std::string params) {
         std::exit(0);
     }
     else {
-        clnt.write("you are not authenticated yet.\n");
+        clnt.write("You are not authenticated yet.\n");
     }
 }
 
@@ -103,8 +100,13 @@ void bye_action(client& clnt, std::string params) {
 }
 
 void login_action(client& clnt, std::string params) {
-    clnt.set_authenticated();
-    default_action(clnt, "", "Hello!\n");
+    if (params.empty()) {
+        default_action(clnt, "", "Please provide username!\n");  
+    }
+    else {
+        clnt.set_authenticated();
+        default_action(clnt, "", "Hello " + params + "!\n");
+    }
 }
 
 void time_action(client& clnt, std::string params) {
@@ -112,7 +114,7 @@ void time_action(client& clnt, std::string params) {
         auto now = std::time(nullptr);
         default_action(clnt, "", std::string{ std::ctime(&now) });
     } else {
-        clnt.write("you are not authenticated yet.\n");
+        clnt.write("You are not authenticated yet.\n");
     }
 }
 
