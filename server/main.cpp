@@ -23,33 +23,49 @@ namespace server {
 
 using credentials = std::pair<std::string, std::string>;
 
-const auto users = std::map<std::string, std::string>{
+struct authenticator {
+    virtual ~authenticator() = default;
+
+    virtual bool authenticate(const credentials& creds) = 0;
+};
+
+struct volatile_authenticator : public authenticator {
+    bool authenticate(const credentials& creds) override {
+        auto user = users_.find(creds.first);
+        if (user != users_.end())
+            if (user->second == creds.second)
+                return true;
+        return false;
+    }
+
+private:
+    static const std::map<std::string, std::string> users_;
+};
+
+const std::map<std::string, std::string> volatile_authenticator::users_ = {
     { "hasan", "123" },
     { "reza", "abc" },
     { "ali", "qaz" }
 };
 
-bool volatile_authenticator(const credentials& creds) {
-    auto user = users.find(creds.first);
-    if (user != users.end())
-        if (user->second == creds.second)
-            return true;
-    return false;
-}
-
-bool persistant_authenticator(const credentials& creds) {
-    auto in = std::ifstream{ "/etc/gap/users.dat" };
-    auto username = std::string{};
-    auto password = std::string{};
-    while (in >> username >> password)
-        if (username == creds.first && password == creds.second)
-            return true;
-    return false;
-}
+struct persistant_authenticator : public authenticator {
+    bool authenticate(const credentials& creds) override {
+        auto in = std::ifstream{ "/etc/gap/users.dat" };
+        auto username = std::string{};
+        auto password = std::string{};
+        while (in >> username >> password)
+            if (username == creds.first && password == creds.second)
+                return true;
+        return false;
+    }
+};
 
 struct client {
-    explicit client(tcp::socket sock) :
-        sock_ { std::move(sock) }, authenticated_{ false }, username_{} {
+    explicit client(tcp::socket sock, authenticator& auth) :
+        sock_ { std::move(sock) },
+        authenticated_{ false },
+        username_{},
+        auth_{ auth } {
     }
 
     template<typename Container>
@@ -79,7 +95,7 @@ struct client {
 
     bool try_login(const credentials& creds) {
         authenticated_ = false;
-        if (persistant_authenticator(creds)) {
+        if (auth_.authenticate(creds)) {
             username_ = creds.first;
             authenticated_ = true;
         }
@@ -102,23 +118,26 @@ private:
     tcp::socket sock_;
     bool authenticated_;
     std::string username_;
+    authenticator& auth_;
 };
 
 struct server {
-    server(boost::asio::io_service& io_service, unsigned short portno) :
+    server(boost::asio::io_service& io_service, unsigned short portno, authenticator& auth) :
         io_service_ { io_service },
-        acceptor_ { io_service, tcp::endpoint{ tcp::v4(), portno } } {
+        acceptor_ { io_service, tcp::endpoint{ tcp::v4(), portno } },
+        auth_{ auth } {
     }
 
     client next_client() {
         tcp::socket sock(io_service_);
         acceptor_.accept(sock);
-        return client{ std::move(sock) };
+        return client{ std::move(sock), auth_ };
     }
 
 private:
     boost::asio::io_service& io_service_;
     tcp::acceptor acceptor_;
+    authenticator& auth_;
 };
 
 using command_action = std::function<void(client&, std::string)>;
@@ -236,7 +255,9 @@ int main(int argc, char *argv[]) {
     try {
         boost::asio::io_service io_service;
 
-        auto srv = gap::server::server{ io_service, portno };
+        auto auth = gap::server::persistant_authenticator{};
+
+        auto srv = gap::server::server{ io_service, portno, auth};
 
         std::cout << "[Server] Gap is started, listening on port " << portno << "." << std::endl;
 
