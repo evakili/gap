@@ -20,11 +20,21 @@ using boost::asio::ip::tcp;
 namespace gap {
 namespace server {
 
+using credentials = std::pair<std::string, std::string>;
+
 const auto users = std::map<std::string, std::string>{
     { "hasan", "123" },
     { "reza", "abc" },
     { "ali", "qaz" }
 };
+
+bool volatile_authenticator(const credentials& creds) {
+    auto user = users.find(creds.first);
+    if (user != users.end())
+        if (user->second == creds.second)
+            return true;
+    return false;
+}
 
 struct client {
     explicit client(tcp::socket sock) :
@@ -56,14 +66,12 @@ struct client {
         return username_;
     }
 
-    bool try_login(std::pair<std::string, std::string> credentials) {
+    bool try_login(const credentials& creds) {
         authenticated_ = false;
-        auto user = users.find(credentials.first);
-        if (user != users.end())
-            if (user->second == credentials.second) {
-                username_ = credentials.first;
-                authenticated_ = true;
-            }
+        if (volatile_authenticator(creds)) {
+            username_ = creds.first;
+            authenticated_ = true;
+        }
         return authenticated_;
     }
 
