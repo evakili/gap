@@ -28,7 +28,7 @@ const auto users = std::map<std::string, std::string>{
 
 struct client {
     explicit client(tcp::socket sock) :
-        sock_ { std::move(sock) }, authenticated_{ false } {
+        sock_ { std::move(sock) }, authenticated_{ false }, username_{} {
     }
 
     template<typename Container>
@@ -52,12 +52,18 @@ struct client {
         return authenticated_;
     }
 
-    bool authenticate(std::string username, std::string password) {
+    std::string username() {
+        return username_;
+    }
+
+    bool authenticate(std::pair<std::string, std::string> credentials) {
         authenticated_ = false;
-        auto user = users.find(username);
+        auto user = users.find(credentials.first);
         if (user != users.end())
-            if (user->second == password)
+            if (user->second == credentials.second) {
+                username_ = credentials.first;
                 authenticated_ = true;
+            }
         return authenticated_;
     }
 
@@ -71,6 +77,7 @@ private:
 
     tcp::socket sock_;
     bool authenticated_;
+    std::string username_;
 };
 
 struct server {
@@ -110,20 +117,24 @@ void bye_action(client& clnt, std::string params) {
     default_action(clnt, "", "See you soon...\n");
 }
 
+std::pair<std::string, std::string> parse_login_params(std::string params) {
+    auto pos = params.find(';');
+    auto username = params;
+    auto password = std::string{};
+    if (pos != std::string::npos) {
+        username = params.substr(0, pos);
+        password = params.substr(pos + 1);
+    }
+    return { username, password };
+}
+
 void login_action(client& clnt, std::string params) {
     if (params.empty()) {
         default_action(clnt, "", "Please provide username!\n");
     }
     else {
-        auto pos = params.find(';');
-        auto username = params;
-        auto password = std::string{};
-        if (pos != std::string::npos) {
-            username = params.substr(0, pos);
-            password = params.substr(pos + 1);
-        }
-        if (clnt.authenticate(username, password))
-            default_action(clnt, "", "Hello " + username + "!\n");
+        if (clnt.authenticate(parse_login_params(params)))
+            default_action(clnt, "", "Hello " + clnt.username() + "!\n");
         else
             default_action(clnt, "", "Invalid username or password!\n");
     }
