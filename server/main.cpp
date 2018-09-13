@@ -110,7 +110,7 @@ void login_action(client& clnt) {
 void time_action(client& clnt) {
     if (clnt.is_authenticated()) {
         auto now = std::time(nullptr);
-        default_action(clnt, std::string{ std::ctime(&now) }.append("\n"));
+        default_action(clnt, std::string{ std::ctime(&now) });
     } else {
         clnt.write("you are not authenticated yet.\n");
     }
