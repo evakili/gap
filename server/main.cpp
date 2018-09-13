@@ -79,18 +79,18 @@ private:
     tcp::acceptor acceptor_;
 };
 
-using command_action = std::function<void(client&)>;
+using command_action = std::function<void(client&, std::string)>;
 
-void default_action(client& clnt, std::string message) {
+void default_action(client& clnt, std::string params, std::string message) {
     if (clnt.is_authenticated())
         clnt.write(message);
     else
         clnt.write("you are not authenticated yet.\n");
 }
 
-void shutdown_action(client& clnt) {
+void shutdown_action(client& clnt, std::string params) {
     if (clnt.is_authenticated()) {
-        default_action(clnt, "Have a nice day...\n");
+        default_action(clnt, "", "Have a nice day...\n");
         std::exit(0);
     }
     else {
@@ -98,19 +98,19 @@ void shutdown_action(client& clnt) {
     }
 }
 
-void bye_action(client& clnt) {
-    default_action(clnt, "See you soon...\n");
+void bye_action(client& clnt, std::string params) {
+    default_action(clnt, "", "See you soon...\n");
 }
 
-void login_action(client& clnt) {
+void login_action(client& clnt, std::string params) {
     clnt.set_authenticated();
-    default_action(clnt, "Hello!\n");
+    default_action(clnt, "", "Hello!\n");
 }
 
-void time_action(client& clnt) {
+void time_action(client& clnt, std::string params) {
     if (clnt.is_authenticated()) {
         auto now = std::time(nullptr);
-        default_action(clnt, std::string{ std::ctime(&now) });
+        default_action(clnt, "", std::string{ std::ctime(&now) });
     } else {
         clnt.write("you are not authenticated yet.\n");
     }
@@ -128,7 +128,7 @@ command_action get_command_reply(std::string command) {
     auto action = action_map.find(command);
     if (action != action_map.end())
         return action->second;
-    return std::bind(default_action, _1, std::string{ "Unknow command, but no problem.\n" });
+    return std::bind(default_action, _1, _2, std::string{ "Unknow command, but no problem.\n" });
 }
 
 auto parse_command(std::string command) {
@@ -154,13 +154,11 @@ void gap_with_client(client clnt, int clnt_no) {
         command.pop_back(); // remove trailing \n
 
         auto parsed = parse_command(command);
-        command = parsed.first;
-        auto params = parsed.second;
 
-        std::cout << "[Client " << clnt_no << "] command: " << command << ", params: " << params << std::endl;
+        std::cout << "[Client " << clnt_no << "] command: " << parsed.first << ", params: " << parsed.second << std::endl;
 
-        auto action = get_command_reply(command);
-        action(clnt);
+        auto action = get_command_reply(parsed.first);
+        action(clnt, parsed.second);
     };
 }
 
