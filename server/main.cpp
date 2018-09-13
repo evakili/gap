@@ -49,15 +49,24 @@ const std::map<std::string, std::string> volatile_authenticator::users_ = {
 };
 
 struct persistant_authenticator : public authenticator {
-    bool authenticate(const credentials& creds) override {
+    persistant_authenticator() {
         auto in = std::ifstream{ "/etc/gap/users.dat" };
         auto username = std::string{};
         auto password = std::string{};
         while (in >> username >> password)
-            if (username == creds.first && password == creds.second)
+            users_.insert(std::make_pair(username, password));
+    }
+
+    bool authenticate(const credentials& creds) override {
+        auto user = users_.find(creds.first);
+        if (user != users_.end())
+            if (user->second == creds.second)
                 return true;
         return false;
     }
+
+private:
+    std::map<std::string, std::string> users_;
 };
 
 struct client {
