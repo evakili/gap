@@ -9,7 +9,7 @@
 
 #include "argh.h"
 #include "server.h"
-#include "persistent_authenticator.h"
+#include "db_authenticator.h"
 
 int main(int argc, char *argv[]) {
     auto cmd_line = argh::parser{ argv };
@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     try {
         boost::asio::io_service io_service;
 
-        auto auth = gap::server::persistant_authenticator{};
+        auto auth = gap::server::db_authenticator{};
 
         auto srv = gap::server::server{ io_service, portno, auth};
 

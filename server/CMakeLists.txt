@@ -4,6 +4,7 @@ add_executable(gap-server
     main.cpp
     volatile_authenticator.cpp
     persistent_authenticator.cpp
+    db_authenticator.cpp
     actions.cpp
     server.cpp)
 
