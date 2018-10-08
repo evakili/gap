@@ -2,9 +2,12 @@
 
 #include <string>
 
+#include <odb/core.hxx>
+
 namespace gap {
 namespace server {
     namespace db {
+        #pragma db object
         struct user {
         public:
             user(std::string name, std::string password)
@@ -32,6 +35,11 @@ namespace server {
             }
 
         private:
+            friend class odb::access;
+            
+            user() {}
+
+            #pragma db id
             std::string name_;
             std::string password_;
         };
