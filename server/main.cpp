@@ -15,59 +15,12 @@
 #include <boost/asio.hpp>
 
 #include "argh.h"
+#include "persistent_authenticator.h"
 
 using boost::asio::ip::tcp;
 
 namespace gap {
 namespace server {
-
-using credentials = std::pair<std::string, std::string>;
-
-struct authenticator {
-    virtual ~authenticator() = default;
-
-    virtual bool authenticate(const credentials& creds) = 0;
-};
-
-struct volatile_authenticator : public authenticator {
-    bool authenticate(const credentials& creds) override {
-        auto user = users_.find(creds.first);
-        if (user != users_.end())
-            if (user->second == creds.second)
-                return true;
-        return false;
-    }
-
-private:
-    static const std::map<std::string, std::string> users_;
-};
-
-const std::map<std::string, std::string> volatile_authenticator::users_ = {
-    { "hasan", "123" },
-    { "reza", "abc" },
-    { "ali", "qaz" }
-};
-
-struct persistant_authenticator : public authenticator {
-    persistant_authenticator() {
-        auto in = std::ifstream{ "/etc/gap/users.dat" };
-        auto username = std::string{};
-        auto password = std::string{};
-        while (in >> username >> password)
-            users_.insert(std::make_pair(username, password));
-    }
-
-    bool authenticate(const credentials& creds) override {
-        auto user = users_.find(creds.first);
-        if (user != users_.end())
-            if (user->second == creds.second)
-                return true;
-        return false;
-    }
-
-private:
-    std::map<std::string, std::string> users_;
-};
 
 struct client {
     explicit client(tcp::socket sock, authenticator& auth) :
