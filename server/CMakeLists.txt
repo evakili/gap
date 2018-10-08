@@ -5,7 +5,7 @@ include(${ODB_USE_FILE})
 
 set(ODB_HDRS include/db/user.h)
 
-odb_compile(ODB_SRCS FILES ${ODB_HDRS} DB sqlite STANDARD c++11 INCLUDE_PREFIX db GENERATE_QUERY)
+odb_compile(ODB_SRCS FILES ${ODB_HDRS} DB sqlite STANDARD c++11 INCLUDE_PREFIX db GENERATE_QUERY GENERATE_SCHEMA)
 
 add_executable(gap-server
     main.cpp
