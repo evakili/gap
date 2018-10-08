@@ -15,11 +15,13 @@ int main(int argc, char *argv[]) {
     auto cmd_line = argh::parser{ argv };
     unsigned short portno{};
     cmd_line({ "-p", "--port" }, 9900) >> portno;
+    std::string db_path{};
+    cmd_line({ "-d", "--database" }, "gap.db") >> db_path;
 
     try {
         boost::asio::io_service io_service;
 
-        auto auth = gap::server::db_authenticator{};
+        auto auth = gap::server::db_authenticator{ db_path };
 
         auto srv = gap::server::server{ io_service, portno, auth};
 
