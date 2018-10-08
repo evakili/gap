@@ -3,7 +3,9 @@ find_package(Threads REQUIRED)
 add_executable(gap-server
     main.cpp
     volatile_authenticator.cpp
-    persistent_authenticator.cpp)
+    persistent_authenticator.cpp
+    actions.cpp
+    server.cpp)
 
 target_include_directories(gap-server
     PRIVATE
